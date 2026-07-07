@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, CheckCircle, Clock, ArrowUpRight, ShieldAlert, MessageSquare } from 'lucide-react';
+import { CheckCircle, ArrowUpRight, ShieldAlert, MessageSquare } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { EscalarCasoModal } from '../components/EscalarCasoModal';
 import { CasoChatPanel } from '../components/CasoChatPanel';

@@ -1,7 +1,7 @@
 // src/pages/CensoVoceriaPage.tsx
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Search, Filter, Heart, Zap, ShieldCheck, Home, Phone, User } from 'lucide-react';
+import { Search, Heart, ShieldCheck, Home, Phone, User } from 'lucide-react';
 
 export function CensoVoceriaPage() {
   const { familias, usuarioActual } = useApp();

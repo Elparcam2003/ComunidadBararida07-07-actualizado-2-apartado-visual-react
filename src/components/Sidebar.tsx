@@ -131,7 +131,7 @@ export function Sidebar() {
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${pestanaActiva === 'mi-bloque' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
             >
               <Users size={18} />
-              <span>Censo de Bloque {usuarioActual.edificioId}</span>
+              <span>Censo de Bloque(Debo terminar 04/07) {usuarioActual.edificioId}</span>
             </button>
           )}
 
@@ -176,7 +176,7 @@ export function Sidebar() {
             >
               <FileWarning size={18} />
               <span>
-                {usuarioActual.rol === 'JEFE_FAMILIA' ? 'Mis Reportes' : 'Reportes del Edificio'}
+                {usuarioActual.rol === 'JEFE_FAMILIA' ? 'Mis Reportes' : 'Reportes del (Debo modificar 06/07 solo texto'}
               </span>
             </button>
           )}
