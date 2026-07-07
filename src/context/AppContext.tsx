@@ -1,7 +1,7 @@
 // src/context/AppContext.tsx
 
 import React, { createContext, useContext, useState } from 'react';
-import type { Usuario, Familia, Pago, Caso, Encuesta, Bitacora, IntegranteFamilia, Rol } from '../types';
+import type { Usuario, Familia, Pago, Caso, Encuesta, Bitacora, MensajeCaso, IntegranteFamilia, Rol } from '../types';
 
 interface AppContextProps {
   usuariosDisponibles: Usuario[];
@@ -31,9 +31,9 @@ interface AppContextProps {
   // Casos Comunales
   casos: Caso[];
   reportarCaso: (nuevoCaso: Omit<Caso, 'id' | 'fechaReporte' | 'estado' | 'esEscalado' | 'reportadoPorId' | 'reportadoPorNombre'>) => void;
+  enviarMensajeCaso: (casoId: string, texto: string) => void;
   actualizarEstadoCaso: (id: string, estado: Caso['estado']) => void;
-  escalarCasoAVoceros: (casoId: string, motivo: string) => void;
-
+  escalarCasoASuperAdmin: (casoId: string, motivo: string) => void;
   // Encuestas de Decisiones
   encuestas: Encuesta[];
   crearEncuesta: (casoId: string | undefined, edificioId: string, pregunta: string, opcionesTexto: string[], alcance: Encuesta['alcance'], destinoId?: string) => void;
@@ -178,10 +178,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       reportadoPorNombre: usuarioActual.nombre,
       fechaReporte: new Date().toISOString().split('T')[0],
       estado: 'ABIERTO',
-      esEscalado: false
+      esEscalado: false,
+      mensajes: []
     };
     setCasos(prev => [nuevo, ...prev]);
   };
+
+  const enviarMensajeCaso = (casoId: string, texto: string) => {
+  const nuevoMensaje: MensajeCaso = {
+    id: Date.now().toString(), // Generador de ID temporal
+    autorId: usuarioActual.id,
+    autorNombre: usuarioActual.nombre,
+    autorRol: usuarioActual.rol as 'JEFE_FAMILIA' | 'VOCERO' | 'SUPER_ADMIN',
+    texto,
+    fecha: new Date().toLocaleString()
+  };
+
+  setCasos(prevCasos => prevCasos.map(caso => 
+    caso.id === casoId 
+      ? { ...caso, mensajes: [...(caso.mensajes || []), nuevoMensaje] }
+      : caso
+  ));
+};
 
   const actualizarEstadoCaso = (id: string, estado: Caso['estado']) => {
     setCasos(prev => prev.map(c => c.id === id ? { ...c, estado } : c));
@@ -242,8 +260,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         procesarPago,
         casos,
         reportarCaso,
+        enviarMensajeCaso,
         actualizarEstadoCaso,
-        escalarCasoAVoceros: asignarEstatusCasoVoceros,
+        escalarCasoASuperAdmin: asignarEstatusCasoVoceros,
         encuestas,
         crearEncuesta,
         votarEncuesta,

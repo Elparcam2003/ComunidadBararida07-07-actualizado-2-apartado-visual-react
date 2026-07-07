@@ -64,6 +64,16 @@ export interface Caso {
   esEscalado: boolean;
   motivoEscalacion?: string;
   areaDestino?: Voceria; // Enlazado con las vocerías para el Paso de Voceros
+  mensajes: MensajeCaso[]; // <-- El nuevo historial de chat
+}
+
+export interface MensajeCaso {
+  id: string;
+  autorId: string;
+  autorNombre: string;
+  autorRol: 'JEFE_FAMILIA' | 'VOCERO' | 'SUPER_ADMIN';
+  texto: string;
+  fecha: string;
 }
 
 export type ModuloBitacora =

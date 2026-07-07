@@ -1,67 +1,58 @@
 // src/pages/ReportesPage.tsx
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { AlertTriangle, CheckCircle2, Clock, Send, MessageSquare } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, Send, MessageSquare, ArrowUpRight, ShieldAlert } from 'lucide-react';
+import { CasoChatPanel } from '../components/CasoChatPanel';
+import { EscalarCasoModal } from '../components/EscalarCasoModal';
+import type { Caso } from '../types';
 
 export function ReportesPage() {
-  // 🤝 Consumimos el estado global "casos" y las funciones de tu AppContext
-  const { usuarioActual, casos, reportarCaso, actualizarEstadoCaso } = useApp();
+  // 🤝 Agregamos escalarCasoASuperAdmin aquí
+  const { usuarioActual, casos, reportarCaso, actualizarEstadoCaso, enviarMensajeCaso, escalarCasoASuperAdmin } = useApp();
   
-  // Control local de los campos del formulario
   const [categoria, setCategoria] = useState<'SERVICIOS' | 'INFRAESTRUCTURA' | 'SALUD_ALERTA' | 'SEGURIDAD_JUSTICIA' | 'OTRO'>('SERVICIOS');
   const [asunto, setAsunto] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  
+  // Estados para los paneles y modales
+  const [casoParaChat, setCasoParaChat] = useState<Caso | null>(null);
+  const [casoAEscalar, setCasoAEscalar] = useState<Caso | null>(null);
 
-  // 🚀 FILTRADO: Basado estrictamente en la competencia del Área de Vocería
+  // 🚀 FILTRADO
   const reportesVisibles = casos.filter(rep => {
-    // 1. El Super Admin/Co-Jefe de calle ve todo
     if (usuarioActual.rol === 'SUPER_ADMIN') return true; 
     
     if (usuarioActual.rol === 'VOCERO') {
       const areaOriginal = usuarioActual.areaVoceria || '';
       const areaVocero = String(areaOriginal).trim().toUpperCase();
 
-      // Fallback de seguridad por si el vocero no tiene área
-      if (!areaVocero || areaVocero === 'UNDEFINED' || areaVocero === 'GENERAL') {
-        return true;
-      }
+      if (!areaVocero || areaVocero === 'UNDEFINED' || areaVocero === 'GENERAL') return true;
 
-      // 2. Enrutamiento por competencia de área real
-      if (rep.categoria === 'SERVICIOS' && (areaVocero.includes('FINANZAS') || areaVocero.includes('ADMINISTRACION') || areaVocero.includes('SERVICIOS'))) {
-        return true;
-      }
-      if (rep.categoria === 'INFRAESTRUCTURA' && (areaVocero.includes('VIVIENDA') || areaVocero.includes('HABITAT') || areaVocero.includes('INFRAESTRUCTURA'))) {
-        return true;
-      }
-      // ✨ Cruzamos tu categoría 'CONVIVENCIA' con el área 'JUSTICIA_PAZ' de Marcos
-      if (rep.categoria === 'CONVIVENCIA' && (areaVocero.includes('JUSTICIA') || areaVocero.includes('SEGURIDAD') || areaVocero.includes('PAZ'))) {
-        return true;
-      }
+      if (rep.categoria === 'SERVICIOS' && (areaVocero.includes('FINANZAS') || areaVocero.includes('ADMINISTRACION') || areaVocero.includes('SERVICIOS'))) return true;
+      if (rep.categoria === 'INFRAESTRUCTURA' && (areaVocero.includes('VIVIENDA') || areaVocero.includes('HABITAT') || areaVocero.includes('INFRAESTRUCTURA'))) return true;
+      if (rep.categoria === 'CONVIVENCIA' && (areaVocero.includes('JUSTICIA') || areaVocero.includes('SEGURIDAD') || areaVocero.includes('PAZ'))) return true;
 
       return false; 
     }
     
-    // Si es un Jefe de Familia común, ve persistentemente lo que él reportó
     return rep.reportadoPorId === usuarioActual.id; 
   });
 
- const manejarCrearReporte = (e: React.FormEvent) => {
+  const manejarCrearReporte = (e: React.FormEvent) => {
     e.preventDefault();
     if (!asunto || !descripcion) return;
 
-    // Traducimos de manera limpia la selección del formulario al tipo de tu backend/contexto
     const categoriaFormateada = categoria === 'SEGURIDAD_JUSTICIA' ? 'CONVIVENCIA' : categoria;
 
-    // Ejecutamos tu función global del AppContext con las llaves exactas de tu interfaz Caso
     reportarCaso({
-      titulo: asunto, // ✨ Tu interfaz usa 'titulo'
+      titulo: asunto,
       descripcion: descripcion,
       categoria: categoriaFormateada as 'INFRAESTRUCTURA' | 'SERVICIOS' | 'CONVIVENCIA',
-      prioridad: 'MEDIA', // Valor por defecto inicial
-      edificioId: usuarioActual.edificioId || 'B3', // ✨ Tu interfaz usa 'edificioId'
+      prioridad: 'MEDIA',
+      edificioId: usuarioActual.edificioId || 'B3',
+      mensajes: []
     });
 
-    // Limpiamos los inputs
     setAsunto('');
     setDescripcion('');
   };
@@ -143,7 +134,8 @@ export function ReportesPage() {
             </div>
           ) : (
             reportesVisibles.map(rep => (
-              <div key={rep.id} className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
+              <div key={rep.id} className={`bg-white border ${rep.esEscalado ? 'border-amber-200 bg-amber-50/20' : 'border-gray-100'} rounded-2xl p-5 shadow-sm space-y-4`}>
+                
                 <div className="flex justify-between items-start gap-4">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -151,8 +143,15 @@ export function ReportesPage() {
                         {((rep as any).categoria || 'CASO').replace('_', ' ')}
                       </span>
                       <span className="text-[10px] text-gray-400 font-semibold">{rep.fechaReporte}</span>
+                      
+                      {/* Badge visual si el caso fue escalado */}
+                      {rep.esEscalado && (
+                        <span className="flex items-center gap-1 text-[9px] uppercase font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">
+                          <ShieldAlert size={10} />
+                          Escalado a Super Admin
+                        </span>
+                      )}
                     </div>
-                    {/* ✨ Corregido: Ahora lee la propiedad 'titulo' directamente de tu interfaz Caso */}
                     <h3 className="font-extrabold text-gray-900 mt-1.5 text-base">{rep.titulo}</h3>
                     <p className="text-xs text-gray-400 font-bold mt-0.5 uppercase tracking-wide">
                       Emitido por: {rep.reportadoPorNombre} { (rep as any).bloque ? `(Bloque ${(rep as any).bloque})` : '' }
@@ -171,23 +170,86 @@ export function ReportesPage() {
                   {rep.descripcion}
                 </p>
 
-                {/* ACCIONES DEL VOCERO / ADMIN */}
-                {usuarioActual.rol !== 'JEFE_FAMILIA' && rep.estado !== 'RESUELTO' && (
-                  <div className="flex justify-end gap-2 pt-2 border-t border-gray-50">
-                    <button 
-                      onClick={() => actualizarEstadoCaso(rep.id, 'RESUELTO')}
-                      className="bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition"
-                    >
-                      Marcar como Solucionado
-                    </button>
-                  </div>
+                {/* Si está escalado mostramos el motivo para que el vocero o jefe de familia sepan el estatus */}
+                {rep.esEscalado && rep.motivoEscalacion && (
+                   <div className="p-2.5 bg-amber-50 border border-amber-100 rounded-lg text-xs text-amber-800">
+                     <strong className="block mb-0.5">Nota de escalación:</strong>
+                     <span className="italic">"{rep.motivoEscalacion}"</span>
+                   </div>
                 )}
+
+                {/* ACCIONES (CHAT, SOLUCIONADO, ESCALAR) */}
+                <div className="flex justify-between items-center gap-2 pt-3 border-t border-gray-100 mt-2">
+                  
+                  {/* Botón de chat visible para todos */}
+                  <button 
+                    type="button"
+                    onClick={() => setCasoParaChat(rep)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition"
+                  >
+                    <MessageSquare size={14} />
+                    Chat
+                    {rep.mensajes && rep.mensajes.length > 0 && (
+                      <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                        {rep.mensajes.length}
+                      </span>
+                    )}
+                  </button>
+
+                  <div className="flex gap-2">
+                    {/* Botón Escalar: Solo Vocero, no resuelto y NO escalado aún */}
+                    {usuarioActual.rol === 'VOCERO' && rep.estado !== 'RESUELTO' && !rep.esEscalado && (
+                      <button 
+                        onClick={() => setCasoAEscalar(rep)}
+                        className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg text-xs font-bold transition"
+                      >
+                        <ArrowUpRight size={14} />
+                        Escalar a Admin
+                      </button>
+                    )}
+
+                    {/* Botón Solucionado: Admin/Vocero, no resuelto y NO escalado */}
+                    {usuarioActual.rol !== 'JEFE_FAMILIA' && rep.estado !== 'RESUELTO' && !rep.esEscalado && (
+                      <button 
+                        onClick={() => actualizarEstadoCaso(rep.id, 'RESUELTO')}
+                        className="bg-emerald-50 hover:bg-emerald-600 text-emerald-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition"
+                      >
+                        Marcar Solucionado
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             ))
           )}
         </div>
 
       </div>
+
+      {/* MODALES Y PANELES */}
+      <EscalarCasoModal
+        isOpen={!!casoAEscalar}
+        onClose={() => setCasoAEscalar(null)}
+        tituloCaso={casoAEscalar?.titulo || ''}
+        onConfirm={(motivo) => {
+          if (casoAEscalar) {
+            escalarCasoASuperAdmin(casoAEscalar.id, motivo);
+          }
+          setCasoAEscalar(null);
+        }}
+      />
+
+      <CasoChatPanel
+        isOpen={!!casoParaChat}
+        onClose={() => setCasoParaChat(null)}
+        caso={casoParaChat}
+        usuarioActualId={usuarioActual.id}
+        onEnviarMensaje={(texto) => {
+          if (casoParaChat) {
+            enviarMensajeCaso(casoParaChat.id, texto);
+          }
+        }}
+      />
     </div>
   );
 }
