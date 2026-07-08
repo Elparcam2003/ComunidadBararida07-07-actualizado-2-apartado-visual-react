@@ -37,6 +37,16 @@ export function Sidebar() {
     }
   };
 
+  const obtenerNombreRol = (rol: string) => {
+    const nombres: Record<string, string> = {
+      'SUPER_ADMIN': 'Administrador Superior',
+      'VOCERO': 'Vocero Comunal',
+      'ADMIN_EDIFICIO': 'Admin. de Edificio',
+      'JEFE_FAMILIA': 'Jefe de Familia'
+    };
+    return nombres[rol] || rol;
+  };
+
   const cambiarVista = (id: string) => {
     setPestanaActiva(id);
     setIsOpen(false);
@@ -66,7 +76,7 @@ export function Sidebar() {
         <div className="bg-slate-900/50 border border-slate-800/60 p-3.5 rounded-2xl mb-6 shadow-sm">
           <div className="font-bold text-slate-200 text-sm truncate">{usuarioActual.nombre}</div>
           <span className={`text-[9px] uppercase tracking-widest font-black px-2 py-0.5 rounded-md border inline-block mt-2 shadow-inner ${obtenerEstilosRol()}`}>
-            {usuarioActual.rol.replace('_', ' ')}
+          {obtenerNombreRol(usuarioActual.rol)}
           </span>
           {usuarioActual.edificioId && (
             <p className="text-slate-500 font-semibold text-[11px] mt-1.5">
@@ -82,9 +92,6 @@ export function Sidebar() {
           {/* === CENSOS (SUPER ADMIN) === */}
           {usuarioActual.rol === 'SUPER_ADMIN' && (
             <>
-              <button onClick={() => cambiarVista('global-residentes')} className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${pestanaActiva === 'global-residentes' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}>
-                <Users size={18} /><span>Censo Urbanización</span>
-              </button>
               <button 
                 onClick={() => cambiarVista('censo-familiar')} className={`w-full flex items-center text-left gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${pestanaActiva === 'censo-familiar' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}>
                 <UserPlus size={18} className="shrink-0" />

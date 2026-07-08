@@ -56,7 +56,7 @@ export function PersonalPage() {
         <ShieldAlert size={48} className="mx-auto text-red-500 mb-3" />
         <h2 className="text-lg font-bold text-red-800">Acceso Restringido</h2>
         <p className="text-red-600 text-sm max-w-md mx-auto mt-1">
-          Solo la Jefa de la Comunidad (SUPER_ADMIN) posee las atribuciones de auditoría necesarias para alterar las credenciales del personal de vocería y jefaturas.
+          Solo la Jefa de la Comunidad (SUPER ADMIN) posee las atribuciones de auditoría necesarias para alterar las credenciales del personal de vocería y jefaturas.
         </p>
       </div>
     );
