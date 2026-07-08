@@ -1,12 +1,21 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { XCircle, Eye } from 'lucide-react';
+import { 
+  XCircle, 
+  Eye, 
+  CheckCircle, 
+  FileSignature, 
+  Users, 
+  MapPin, 
+  Calendar,
+  Inbox
+} from 'lucide-react';
 import { FamiliaDetalleModal } from '../components/FamiliaDetalleModal';
 import { ConfirmModal } from '../components/ConfirmModal';
-import { RechazarModal } from '../components/RechazarModal'; // 🟢 Importamos el modal de rechazo con motivos
+import { RechazarModal } from '../components/RechazarModal'; 
 
 export function SolicitudesCensoPage() {
-  const { familias, aprobarFamilia} = useApp(); // 🟢 Extraemos usuarioActual para la auditoría
+  const { familias, aprobarFamilia } = useApp(); 
 
   const [familiaDetalle, setFamiliaDetalle] = useState<string | null>(null);
 
@@ -23,7 +32,6 @@ export function SolicitudesCensoPage() {
   const pendientes = familias.filter(f => f.estado === 'PENDIENTE');
   const familiaSeleccionada = familias.find(f => f.id === familiaDetalle);
   
-  // Obtenemos los datos de la familia que se está evaluando en los botones directos de la lista
   const familiaParaEvaluar = familias.find(f => f.id === modalConfig.familiaId);
 
   const handleCambiarEstado = (id: string, estado: 'APROBADA' | 'RECHAZADA') => {
@@ -35,82 +43,131 @@ export function SolicitudesCensoPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Solicitudes de Censo</h1>
-        <p className="text-gray-500">Familias pendientes por aprobación.</p>
+    <div className="space-y-6 p-4 md:p-6 max-w-[1400px] mx-auto animate-fadeIn">
+      
+      {/* HEADER DE LA PÁGINA */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 border-b border-slate-200 pb-5">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl">
+              <FileSignature size={24} />
+            </div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Solicitudes de Censo</h1>
+          </div>
+          <p className="text-sm text-slate-500 mt-2 ml-14">
+            Revisión y aprobación de nuevos ingresos al sistema comunitario.
+          </p>
+        </div>
+        
+        {/* Contador de Pendientes */}
+        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-4 py-2 rounded-xl text-amber-700 font-bold text-sm shadow-sm">
+          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+          {pendientes.length} {pendientes.length === 1 ? 'Solicitud en cola' : 'Solicitudes en cola'}
+        </div>
       </div>
 
+      {/* ESTADO VACÍO (Bandeja limpia) */}
       {pendientes.length === 0 && (
-        <div className="bg-white border rounded-xl p-6 text-center text-gray-500">
-          No hay solicitudes pendientes.
+        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl py-20 flex flex-col items-center justify-center text-center mt-8">
+          <div className="bg-white p-5 rounded-full shadow-sm border border-slate-100 mb-4 text-slate-300">
+            <Inbox size={48} strokeWidth={1.5} />
+          </div>
+          <h3 className="text-slate-900 font-bold text-lg">Bandeja al día</h3>
+          <p className="text-slate-500 text-sm mt-1 max-w-sm">
+            No hay solicitudes de censo pendientes por revisar. Excelente trabajo.
+          </p>
         </div>
       )}
 
-      {pendientes.map(familia => (
-        <div key={familia.id} className="bg-white border rounded-xl p-5 shadow-sm">
-          <div className="flex justify-between items-start">
-            <div>
-              <h2 className="font-bold text-lg">{familia.jefeFamilia}</h2>
-              <p className="text-sm text-gray-600">Cédula: {familia.cedulaJefe}</p>
-              <p className="text-sm text-gray-600">
-                Torre {familia.torre} · Bloque {familia.bloque} · Apt {familia.apartamento}
-              </p>
-              <p className="text-sm text-gray-600">Integrantes: {familia.integrantes.length}</p>
-              <p className="text-sm text-gray-600">
-                Registro: {new Date(familia.fechaRegistro).toLocaleDateString()}
-              </p>
-              <div className="mt-2">
-                <span className="px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-semibold">
-                  Pendiente de revisión
+      {/* GRID DE SOLICITUDES */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {pendientes.map(familia => (
+          <div key={familia.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col">
+            
+            {/* Cabecera Tarjeta */}
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                  Jefe de Familia
                 </span>
+                <h2 className="font-bold text-lg text-slate-900 leading-tight">{familia.jefeFamilia}</h2>
+                <p className="text-indigo-600 font-bold text-xs mt-0.5">CI: {familia.cedulaJefe}</p>
+              </div>
+              
+              <span className="flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-600 border border-amber-200">
+                Pendiente
+              </span>
+            </div>
+
+            {/* Detalles Rápidos (Caja Gris) */}
+            <div className="bg-slate-50 rounded-xl p-3.5 mb-5 flex-1 space-y-2.5 border border-slate-100">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                <MapPin size={14} className="text-slate-400 shrink-0" />
+                <span className="truncate">
+                  {familia.torre && `T-${familia.torre} · `} 
+                  B-${familia.bloque} · Apto {familia.apartamento}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                <Users size={14} className="text-slate-400 shrink-0" />
+                <span>{familia.integrantes.length} Integrantes registrados</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                <Calendar size={14} className="text-slate-400 shrink-0" />
+                <span>Registrado: {new Date(familia.fechaRegistro).toLocaleDateString()}</span>
               </div>
             </div>
 
+            {/* Acciones (Botones) */}
             <div className="flex gap-2">
               <button
                 onClick={() => setFamiliaDetalle(familia.id)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded flex items-center gap-2 text-sm font-medium transition-colors"
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold transition-colors shadow-sm"
+                title="Inspeccionar detalles"
               >
                 <Eye size={16} />
-                Ver
+                Detalles
               </button>
 
               <button
                 onClick={() => handleCambiarEstado(familia.id, 'APROBADA')}
-                className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded flex items-center gap-2 text-sm font-medium transition-colors"
+                className="flex-[1.2] bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-500 hover:text-white py-2 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all shadow-sm"
               >
+                <CheckCircle size={16} />
                 Aprobar
               </button>
 
               <button
                 onClick={() => handleCambiarEstado(familia.id, 'RECHAZADA')}
-                className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded flex items-center gap-2 text-sm font-medium transition-colors"
+                className="flex-[1.2] bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-500 hover:text-white py-2 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all shadow-sm"
               >
                 <XCircle size={16} />
                 Rechazar
               </button>
             </div>
-          </div>
-        </div>
-      ))}
 
-      {/* MODAL DE DETALLES */}
+          </div>
+        ))}
+      </div>
+
+      {/* ================================================== */}
+      {/* MODALES (Mantenidos intactos de tu lógica original) */}
+      {/* ================================================== */}
+
       <FamiliaDetalleModal
         familia={familiaSeleccionada ?? null}
         onClose={() => setFamiliaDetalle(null)}
-        esAdministrador={true} // 🟢 Le pasamos true para que use los botones internos también si se abre
+        esAdministrador={true}
         aprobarFamilia={aprobarFamilia}
       />
 
-      {/* 🟢 MODAL DE CONFIRMACIÓN (SOLO PARA APROBACIONES) */}
       <ConfirmModal
         isOpen={modalConfig.isOpen && modalConfig.tipo === 'APROBADA'}
         onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
         titulo="¿Aprobar solicitud?"
         mensaje="Esta acción registrará a la familia en el sistema de manera activa."
         textoConfirmar="Sí, Aprobar"
-        variante="success" // 🟢 Se vuelve verde automáticamente
+        variante="success" 
         onConfirm={() => {
           if (aprobarFamilia) {
               aprobarFamilia(modalConfig.familiaId, 'APROBADA'); 
@@ -119,7 +176,6 @@ export function SolicitudesCensoPage() {
         }}
       />
 
-      {/* 🟢 NUEVO: SUB-MODAL DE MOTIVO DE RECHAZO (SOLO PARA RECHAZOS) */}
       <RechazarModal
         isOpen={modalConfig.isOpen && modalConfig.tipo === 'RECHAZADA'}
         onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}

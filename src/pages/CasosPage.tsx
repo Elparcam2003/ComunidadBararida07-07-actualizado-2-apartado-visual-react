@@ -163,7 +163,7 @@ export function CasosPage() {
       <CasoChatPanel
         isOpen={!!casoParaChat}
         onClose={() => setCasoParaChat(null)}
-        caso={casoParaChat}
+        caso={casos.find(c => c.id === casoParaChat?.id) || null}
         usuarioActualId={usuarioActual.id}
         onEnviarMensaje={(texto) => {
           if (casoParaChat) {
