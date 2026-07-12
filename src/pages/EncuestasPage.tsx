@@ -21,6 +21,7 @@ interface EncuestaExtendida {
 
 export function EncuestasPage() {
   const { usuarioActual, encuestas, crearEncuesta, votarEncuesta, familias } = useApp();
+  if (!usuarioActual) return null;
 
   // Estados para la creación de encuestas
   const [mostrarForm, setMostrarForm] = useState(false);

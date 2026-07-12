@@ -30,6 +30,7 @@ const VOCERIAS_LABELS: Record<Voceria, string> = {
 
 export function PersonalPage() {
   const { usuarioActual, usuariosDisponibles, agregarUsuarioPersonal, editarUsuarioPersonal, eliminarUsuarioPersonal } = useApp();
+  if (!usuarioActual) return null;
   
   // Estados para el formulario
   const [mostrarForm, setMostrarForm] = useState(false);

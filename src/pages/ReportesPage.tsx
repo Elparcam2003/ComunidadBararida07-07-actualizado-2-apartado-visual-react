@@ -9,6 +9,7 @@ import type { Caso } from '../types';
 export function ReportesPage() {
   // 🤝 Agregamos escalarCasoASuperAdmin aquí
   const { usuarioActual, casos, reportarCaso, actualizarEstadoCaso, enviarMensajeCaso, escalarCasoASuperAdmin } = useApp();
+  if (!usuarioActual) return null;
   
   const [categoria, setCategoria] = useState<'SERVICIOS' | 'INFRAESTRUCTURA' | 'SALUD_ALERTA' | 'SEGURIDAD_JUSTICIA' | 'OTRO'>('SERVICIOS');
   const [asunto, setAsunto] = useState('');

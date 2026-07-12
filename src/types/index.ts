@@ -22,6 +22,9 @@ export interface Usuario {
   voceria?: Voceria;
   usuarioLogin?: string;
   claveLogin?: string;
+  esPrimerIngreso?: boolean; 
+  preguntaSeguridad?: string;
+  respuestaSeguridad?: string;
   apartamento?: string;
   areaVoceria?: Voceria;
 }

@@ -7,6 +7,7 @@ import { FamiliaDetalleModal } from '../components/FamiliaDetalleModal';
 export function CensoVoceriaPage() {
   // 1. Extraemos aprobarFamilia del contexto
   const { familias, usuarioActual, aprobarFamilia } = useApp();
+  if (!usuarioActual) return null;
   const [busqueda, setBusqueda] = useState('');
   const [filtroNecesidad, setFiltroNecesidad] = useState<'TODOS' | 'SALUD' | 'DISCAPACIDAD'>('TODOS');
   

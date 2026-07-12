@@ -7,6 +7,7 @@ import type { Caso } from '../types';
 
 export function CasosPage() {
   const { usuarioActual, casos, actualizarEstadoCaso, escalarCasoASuperAdmin, enviarMensajeCaso } = useApp();
+  if (!usuarioActual) return null;
   
   // Estados para controlar los modales y paneles
   const [casoAEscalar, setCasoAEscalar] = useState<Caso | null>(null);

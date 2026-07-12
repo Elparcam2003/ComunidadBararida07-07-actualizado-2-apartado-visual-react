@@ -1,21 +1,20 @@
 // src/context/AppContext.tsx
-
 import React, { createContext, useContext, useState } from 'react';
 import type { Usuario, Familia, Pago, Caso, Encuesta, Bitacora, MensajeCaso, IntegranteFamilia, Rol } from '../types';
 
 interface AppContextProps {
   usuariosDisponibles: Usuario[];
-  usuarioActual: Usuario;
-  cambiarUsuario: (id: string) => void;
+  usuarioActual: Usuario | null;
+  login: (usuarioLogin: string, claveLogin: string) => boolean;
+  logout: () => void;
+  completarConfiguracionInicial: (nuevaClave: string, pregunta: string, respuesta: string) => void;
   pestanaActiva: string;
   setPestanaActiva: (pestana: string) => void;
   
-  // Gestión de Personal / Usuarios
   agregarUsuarioPersonal: (usuario: Omit<Usuario, 'id'>) => void;
   editarUsuarioPersonal: (usuario: Usuario) => void;
   eliminarUsuarioPersonal: (id: string) => void;
 
-  // Censo Familiar Único
   familias: Familia[];
   familiaActual: Familia | undefined;
   agregarFamilia: (familia: Omit<Familia, 'id' | 'estado' | 'fechaRegistro'>) => void;
@@ -23,23 +22,20 @@ interface AppContextProps {
   reenviarSolicitudFamilia: (id: string, datos: Omit<Familia, 'id' | 'estado' | 'fechaRegistro'>) => void;
   agregarIntegranteFamilia: (familiaId: string, integrante: IntegranteFamilia) => void;
 
-  // Finanzas por Vivienda
   pagos: Pago[];
   registrarPago: (nuevoPago: Omit<Pago, 'id' | 'estado'>) => void;
   procesarPago: (id: string, estado: Pago['estado']) => void;
 
-  // Casos Comunales
   casos: Caso[];
   reportarCaso: (nuevoCaso: Omit<Caso, 'id' | 'fechaReporte' | 'estado' | 'esEscalado' | 'reportadoPorId' | 'reportadoPorNombre'>) => void;
   enviarMensajeCaso: (casoId: string, texto: string) => void;
   actualizarEstadoCaso: (id: string, estado: Caso['estado']) => void;
   escalarCasoASuperAdmin: (casoId: string, motivo: string) => void;
-  // Encuestas de Decisiones
+  
   encuestas: Encuesta[];
   crearEncuesta: (casoId: string | undefined, edificioId: string, pregunta: string, opcionesTexto: string[], alcance: Encuesta['alcance'], destinoId?: string) => void;
   votarEncuesta: (encuestaId: string, opcionIndex: number, usuarioId: string) => void;
 
-  // Bitácora de Auditoría
   bitacora: Bitacora[];
   registrarBitacora: (usuarioId: string, usuarioNombre: string, rol: Rol, accion: string, modulo: Bitacora['modulo'], descripcion: string) => void;
 }
@@ -47,15 +43,14 @@ interface AppContextProps {
 const AppContext = createContext<AppContextProps | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  // Mock inicial limpio
   const [usuariosDisponibles, setUsuariosDisponibles] = useState<Usuario[]>([
-    { id: '1', nombre: 'Carmen Rodríguez', correo: 'carmen@comunidad.com', rol: 'SUPER_ADMIN' },
-    { id: '2', nombre: 'Marcos Pérez', correo: 'marcos@bloque3.com', rol: 'VOCERO', edificioId: 'B3',areaVoceria: 'JUSTICIA_PAZ' },
-    { id: '3', nombre: 'Ana María Silva', correo: 'anamaria@vecino.com', rol: 'JEFE_FAMILIA', edificioId: 'B3', apartamento: '2B', usuarioLogin: 'anamaria', claveLogin: '123456' },
+    { id: '1', nombre: 'Carmen Rodríguez', correo: 'carmen@comunidad.com', rol: 'SUPER_ADMIN', usuarioLogin: 'admin', claveLogin: '123', esPrimerIngreso: true },
+    { id: '2', nombre: 'Marcos Pérez', correo: 'marcos@bloque3.com', rol: 'VOCERO', edificioId: 'B3', areaVoceria: 'JUSTICIA_PAZ', usuarioLogin: 'vocero', claveLogin: '123', esPrimerIngreso: true },
+    { id: '3', nombre: 'Ana María Silva', correo: 'anamaria@vecino.com', rol: 'JEFE_FAMILIA', edificioId: 'B3', apartamento: '2B', usuarioLogin: 'anamaria', claveLogin: '123', esPrimerIngreso: true },
   ]);
 
-  const [usuarioActual, setUsuarioActual] = useState<Usuario>(usuariosDisponibles[0]);
-  const [pestanaActiva, setPestanaActiva] = useState<string>('censo');
+  const [usuarioActual, setUsuarioActual] = useState<Usuario | null>(null);
+  const [pestanaActiva, setPestanaActiva] = useState<string>('registro-censos');
 
   const [familias, setFamilias] = useState<Familia[]>([
     {
@@ -80,20 +75,64 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [encuestas, setEncuestas] = useState<Encuesta[]>([]);
   const [bitacora, setBitacora] = useState<Bitacora[]>([]);
 
-  const familiaActual = familias.find(f => f.usuarioId === usuarioActual.id);
+  const familiaActual = usuarioActual ? familias.find(f => f.usuarioId === usuarioActual.id) : undefined;
 
-  const cambiarUsuario = (id: string) => {
-    const user = usuariosDisponibles.find(u => u.id === id);
-    if (user) setUsuarioActual(user);
+  // --- LOGIN Y LOGOUT ---
+  const login = (usuarioLogin: string, claveLogin: string) => {
+    const user = usuariosDisponibles.find(u => u.usuarioLogin === usuarioLogin && u.claveLogin === claveLogin);
+    if (user) {
+      setUsuarioActual(user);
+      if (user.rol === 'JEFE_FAMILIA') setPestanaActiva('censo-familiar');
+      else if (user.rol === 'VOCERO') setPestanaActiva('mi-bloque');
+      else if (user.rol === 'ADMIN_EDIFICIO') setPestanaActiva('casos-locales');
+      else if (user.rol === 'SUPER_ADMIN') setPestanaActiva('registro-censos');
+      else setPestanaActiva('reportes');
+      return true;
+    }
+    return false;
+  };
+
+  const logout = () => {
+    setUsuarioActual(null);
+  };
+
+  // ✨ AQUÍ ESTÁ LA MAGIA QUE FORZARÁ EL AVANCE
+  const completarConfiguracionInicial = (nuevaClave: string, pregunta: string, respuesta: string) => {
+    if (!usuarioActual) return;
+    
+    const usuarioActualizado = {
+      ...usuarioActual,
+      claveLogin: nuevaClave,
+      preguntaSeguridad: pregunta,
+      respuestaSeguridad: respuesta,
+      esPrimerIngreso: false // <-- Esto abre el candado
+    };
+
+    // Actualizamos al usuario en tiempo real
+    setUsuarioActual(usuarioActualizado);
+    setUsuariosDisponibles(prev => prev.map(u => u.id === usuarioActual.id ? usuarioActualizado : u));
+
+    // Alerta para asegurarnos de que la función se ejecutó correctamente
+    alert("¡Seguridad configurada con éxito! Bienvenido al sistema.");
   };
 
   // --- CONTROL DE PERSONAL / USUARIOS ---
   const agregarUsuarioPersonal = (usuario: Omit<Usuario, 'id'>) => {
     const nuevoId = 'u_' + Math.random().toString(36).substr(2, 9);
-    const nuevoUsuario: Usuario = { ...usuario, id: nuevoId };
+    
+    // ✨ REGLA DE ORO: Le asignamos un usuario y clave automáticos al crearlos para que puedan iniciar sesión
+    const usuarioTemporal = usuario.correo ? usuario.correo.split('@')[0] : `user_${nuevoId}`;
+
+    const nuevoUsuario: Usuario = { 
+      ...usuario, 
+      id: nuevoId,
+      usuarioLogin: usuarioTemporal, // Su usuario será la primera parte de su correo
+      claveLogin: '123', // Clave temporal obligatoria
+      esPrimerIngreso: true // Obligado a cambiarla
+    };
+
     setUsuariosDisponibles(prev => [...prev, nuevoUsuario]);
 
-    // Generación automática del censo si se crea un Jefe de Familia directo
     if (usuario.rol === 'JEFE_FAMILIA') {
       const nuevaFam: Familia = {
         id: 'fam_' + Math.random().toString(36).substr(2, 9),
@@ -112,17 +151,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
       setFamilias(prev => [nuevaFam, ...prev]);
     }
+    
+    alert(`Usuario creado. \n\nCredenciales temporales:\nUsuario: ${usuarioTemporal}\nClave: 123`);
   };
 
   const editarUsuarioPersonal = (usuario: Usuario) => {
     setUsuariosDisponibles(prev => prev.map(u => u.id === usuario.id ? usuario : u));
-    setFamilias(prev => prev.map(f => f.usuarioId === usuario.id ? {
-      ...f,
-      jefeFamilia: usuario.nombre,
-      correo: usuario.correo,
-      bloque: usuario.edificioId || f.bloque,
-      apartamento: usuario.apartamento || f.apartamento
-    } : f));
+    setFamilias(prev => prev.map(f => f.usuarioId === usuario.id ? { ...f, jefeFamilia: usuario.nombre, correo: usuario.correo, bloque: usuario.edificioId || f.bloque, apartamento: usuario.apartamento || f.apartamento } : f));
   };
 
   const eliminarUsuarioPersonal = (id: string) => {
@@ -130,25 +165,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setFamilias(prev => prev.filter(f => f.usuarioId !== id));
   };
 
-  // --- CONTROL DEL CENSO FAMILIAR ---
   const agregarFamilia = (familia: Omit<Familia, 'id' | 'estado' | 'fechaRegistro'>) => {
-    const nueva: Familia = {
-      ...familia,
-      id: 'fam_' + Math.random().toString(36).substr(2, 9),
-      estado: 'PENDIENTE',
-      fechaRegistro: new Date().toISOString()
-    };
-    setFamilias(prev => [nueva, ...prev]);
+    setFamilias(prev => [{ ...familia, id: 'fam_' + Math.random().toString(36).substr(2, 9), estado: 'PENDIENTE', fechaRegistro: new Date().toISOString() }, ...prev]);
   };
 
   const aprobarFamilia = (id: string, estado: Familia['estado'], motivo?: string) => {
-    setFamilias(prev => prev.map(f => f.id === id ? {
-      ...f,
-      estado,
-      motivoRechazo: estado === 'RECHAZADA' ? motivo : undefined,
-      fechaRevision: new Date().toISOString(),
-      revisadoPor: usuarioActual.nombre
-    } : f));
+    setFamilias(prev => prev.map(f => f.id === id ? { ...f, estado, motivoRechazo: estado === 'RECHAZADA' ? motivo : undefined, fechaRevision: new Date().toISOString(), revisadoPor: usuarioActual?.nombre || 'Sistema' } : f));
   };
 
   const reenviarSolicitudFamilia = (id: string, datos: Omit<Familia, 'id' | 'estado' | 'fechaRegistro'>) => {
@@ -159,70 +181,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setFamilias(prev => prev.map(f => f.id === familiaId ? { ...f, integrantes: [...f.integrantes, integrante] } : f));
   };
 
-  // --- FINANZAS / PAGOS ---
   const registrarPago = (nuevoPago: Omit<Pago, 'id' | 'estado'>) => {
-    const nuevo: Pago = { ...nuevoPago, id: 'pag_' + Math.random().toString(36).substr(2, 9), estado: 'PENDIENTE' };
-    setPagos(prev => [nuevo, ...prev]);
+    setPagos(prev => [{ ...nuevoPago, id: 'pag_' + Math.random().toString(36).substr(2, 9), estado: 'PENDIENTE' }, ...prev]);
   };
 
   const procesarPago = (id: string, estado: Pago['estado']) => {
     setPagos(prev => prev.map(p => p.id === id ? { ...p, estado } : p));
   };
 
-  // --- CASOS COMUNALES ---
   const reportarCaso = (nuevoCaso: Omit<Caso, 'id' | 'fechaReporte' | 'estado' | 'esEscalado' | 'reportadoPorId' | 'reportadoPorNombre'>) => {
-    const nuevo: Caso = {
-      ...nuevoCaso,
-      id: 'cas_' + Math.random().toString(36).substr(2, 9),
-      reportadoPorId: usuarioActual.id,
-      reportadoPorNombre: usuarioActual.nombre,
-      fechaReporte: new Date().toISOString().split('T')[0],
-      estado: 'ABIERTO',
-      esEscalado: false,
-      mensajes: []
-    };
-    setCasos(prev => [nuevo, ...prev]);
+    if (!usuarioActual) return;
+    setCasos(prev => [{ ...nuevoCaso, id: 'cas_' + Math.random().toString(36).substr(2, 9), reportadoPorId: usuarioActual.id, reportadoPorNombre: usuarioActual.nombre, fechaReporte: new Date().toISOString().split('T')[0], estado: 'ABIERTO', esEscalado: false, mensajes: [] }, ...prev]);
   };
 
   const enviarMensajeCaso = (casoId: string, texto: string) => {
-  const nuevoMensaje: MensajeCaso = {
-    id: Date.now().toString(), // Generador de ID temporal
-    autorId: usuarioActual.id,
-    autorNombre: usuarioActual.nombre,
-    autorRol: usuarioActual.rol as 'JEFE_FAMILIA' | 'VOCERO' | 'SUPER_ADMIN',
-    texto,
-    fecha: new Date().toLocaleString()
+    if (!usuarioActual) return;
+    const nuevoMensaje: MensajeCaso = { id: Date.now().toString(), autorId: usuarioActual.id, autorNombre: usuarioActual.nombre, autorRol: usuarioActual.rol as 'JEFE_FAMILIA' | 'VOCERO' | 'SUPER_ADMIN', texto, fecha: new Date().toLocaleString() };
+    setCasos(prev => prev.map(caso => caso.id === casoId ? { ...caso, mensajes: [...(caso.mensajes || []), nuevoMensaje] } : caso));
   };
 
-  setCasos(prevCasos => prevCasos.map(caso => 
-    caso.id === casoId 
-      ? { ...caso, mensajes: [...(caso.mensajes || []), nuevoMensaje] }
-      : caso
-  ));
-};
+  const actualizarEstadoCaso = (id: string, estado: Caso['estado']) => { setCasos(prev => prev.map(c => c.id === id ? { ...c, estado } : c)); };
+  const asignarEstatusCasoVoceros = (casoId: string, motivo: string) => { setCasos(prev => prev.map(c => c.id === casoId ? { ...c, esEscalado: true, motivoEscalacion: motivo, prioridad: 'ALTA' } : c)); };
 
-  const actualizarEstadoCaso = (id: string, estado: Caso['estado']) => {
-    setCasos(prev => prev.map(c => c.id === id ? { ...c, estado } : c));
-  };
-
-  const asignarEstatusCasoVoceros = (casoId: string, motivo: string) => {
-    setCasos(prev => prev.map(c => c.id === casoId ? { ...c, esEscalado: true, motivoEscalacion: motivo, prioridad: 'ALTA' } : c));
-  };
-
-  // --- ENCUESTAS ---
   const crearEncuesta = (casoId: string | undefined, edificioId: string, pregunta: string, opcionesTexto: string[], alcance: Encuesta['alcance'], destinoId?: string) => {
-    const nueva: Encuesta = {
-      id: 'enc_' + Math.random().toString(36).substr(2, 9),
-      casoId,
-      edificioId,
-      pregunta,
-      opciones: opcionesTexto.map(t => ({ texto: t, votos: 0 })),
-      votosResidentes: [],
-      alcance,
-      destinoId
-    };
-    setEncuestas(prev => [...prev, nueva]);
-  };
+    setEncuestas(prev => [...prev, { id: 'enc_' + Math.random().toString(36).substr(2, 9), casoId, edificioId, pregunta, opciones: opcionesTexto.map(t => ({ texto: t, votos: 0 })), votosResidentes: [], alcance, destinoId }]);
+  }; 
 
   const votarEncuesta = (encuestaId: string, opcionIndex: number, usuarioId: string) => {
     setEncuestas(prev => prev.map(en => {
@@ -234,40 +217,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const registrarBitacora = (usuarioId: string, usuarioNombre: string, rol: Rol, accion: string, modulo: Bitacora['modulo'], descripcion: string) => {
-    const nueva: Bitacora = { id: 'bit_' + Math.random().toString(36).substr(2, 9), fecha: new Date().toLocaleString(), usuarioId, usuarioNombre, rol, accion, modulo, descripcion };
-    setBitacora(prev => [nueva, ...prev]);
+    setBitacora(prev => [{ id: 'bit_' + Math.random().toString(36).substr(2, 9), fecha: new Date().toLocaleString(), usuarioId, usuarioNombre, rol, accion, modulo, descripcion }, ...prev]);
   };
 
   return (
     <AppContext.Provider
       value={{
-        usuariosDisponibles,
-        usuarioActual,
-        cambiarUsuario,
-        pestanaActiva,
-        setPestanaActiva,
-        agregarUsuarioPersonal,
-        editarUsuarioPersonal,
-        eliminarUsuarioPersonal,
-        familias,
-        familiaActual,
-        agregarFamilia,
-        aprobarFamilia,
-        reenviarSolicitudFamilia,
-        agregarIntegranteFamilia,
-        pagos,
-        registrarPago,
-        procesarPago,
-        casos,
-        reportarCaso,
-        enviarMensajeCaso,
-        actualizarEstadoCaso,
-        escalarCasoASuperAdmin: asignarEstatusCasoVoceros,
-        encuestas,
-        crearEncuesta,
-        votarEncuesta,
-        bitacora,
-        registrarBitacora
+        usuariosDisponibles, usuarioActual, login, logout,
+        completarConfiguracionInicial, // Exportada correctamente
+        pestanaActiva, setPestanaActiva,
+        agregarUsuarioPersonal, editarUsuarioPersonal, eliminarUsuarioPersonal,
+        familias, familiaActual, agregarFamilia, aprobarFamilia, reenviarSolicitudFamilia, agregarIntegranteFamilia,
+        pagos, registrarPago, procesarPago,
+        casos, reportarCaso, enviarMensajeCaso, actualizarEstadoCaso, escalarCasoASuperAdmin: asignarEstatusCasoVoceros,
+        encuestas, crearEncuesta, votarEncuesta,
+        bitacora, registrarBitacora
       }}
     >
       {children}
@@ -279,4 +243,4 @@ export function useApp() {
   const context = useContext(AppContext);
   if (!context) throw new Error('useApp debe usarse dentro de un AppProvider');
   return context;
-}
+} 

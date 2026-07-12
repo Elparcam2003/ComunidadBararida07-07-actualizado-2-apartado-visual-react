@@ -14,6 +14,7 @@ export function CensoFamiliarPage() {
   // --- CONTROL DE EDICIÓN AVANZADA ---
   const [editandoRechazado, setEditandoRechazado] = useState(false);
   const [integrantesEditables, setIntegrantesEditables] = useState<IntegranteFamilia[]>([]);
+  if (!usuarioActual) return null;
 
   // --- DATOS FORMULARIO (JEFE / VIVIENDA) ---
   const [nombre, setNombre] = useState('');

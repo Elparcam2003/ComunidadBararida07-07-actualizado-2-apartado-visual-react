@@ -15,6 +15,7 @@ import { useApp } from '../context/AppContext';
 
 export function RegistroCensosPage() {
   const { familias, aprobarFamilia, usuarioActual } = useApp();
+  if (!usuarioActual) return null;
   
   // Estados
   const [busqueda, setBusqueda] = useState('');
