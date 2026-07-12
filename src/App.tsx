@@ -19,30 +19,31 @@ function Layout() {
   const { pestanaActiva } = useApp();
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 select-none">
-      <div className="flex-1 flex overflow-hidden">
-        <Sidebar />
+    // ✨ EL ARREGLO ESTÁ AQUÍ: "flex-col md:flex-row" organiza todo perfecto según la pantalla
+    <div className="flex flex-col md:flex-row h-screen bg-gray-100 select-none overflow-hidden">
+      
+      <Sidebar />
+      
+      {/* ✨ Redujimos el padding en móviles (p-4) y lo mantuvimos amplio en PC (md:p-8) */}
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto bg-gray-50 w-full relative">
+        {pestanaActiva === 'censo-familiar' && <CensoFamiliarPage />}
+        {pestanaActiva === 'mi-bloque' && <CensoVoceriaPage />}
+        {pestanaActiva === 'solicitudes-censo' && <SolicitudesCensoPage />}
+        {pestanaActiva === 'registro-censos' && <RegistroCensosPage />}
         
-        {/* ENRUTADOR DINÁMICO DE PÁGINAS */}
-        <main className="flex-1 p-8 overflow-y-auto bg-gray-50">
-          {pestanaActiva === 'censo-familiar' && <CensoFamiliarPage />}
-          {pestanaActiva === 'mi-bloque' && <CensoVoceriaPage />}
-          {pestanaActiva === 'solicitudes-censo' && <SolicitudesCensoPage />}
-          {pestanaActiva === 'registro-censos' && <RegistroCensosPage />}
-          
-          {pestanaActiva === 'gestion-personal' && <PersonalPage />}
-          {pestanaActiva === 'casos-escalados' && <CasosPage />}
-          {pestanaActiva === 'bitacora' && <BitacoraPage />}
-          
-          {pestanaActiva === 'reportes' && <ReportesPage />}
-          {pestanaActiva === 'encuestas' && <EncuestasPage />}
-        </main>
-      </div>
+        {pestanaActiva === 'gestion-personal' && <PersonalPage />}
+        {pestanaActiva === 'casos-escalados' && <CasosPage />}
+        {pestanaActiva === 'bitacora' && <BitacoraPage />}
+        
+        {pestanaActiva === 'reportes' && <ReportesPage />}
+        {pestanaActiva === 'encuestas' && <EncuestasPage />}
+      </main>
+
     </div>
   );
-} 
+}
 
-// ✨ EL "GUARDIA DE SEGURIDAD" DEFINITIVO
+// ✨ EL  "GUARDIA DE SEGURIDAD" DEFINITIVO
 function MainRouter() {
   const { usuarioActual } = useApp();
   
