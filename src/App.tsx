@@ -13,7 +13,8 @@ import { ReportesPage } from './pages/ReportesPage';
 import { SolicitudesCensoPage } from './pages/SolicitudesCensoPage';
 import { RegistroCensosPage } from './pages/RegistroCensosPage';
 import { EncuestasPage } from './pages/EncuestasPage';
-import { CensoVoceriaPage } from './pages/CensoVoceriaPage'; 
+import { CensoVoceriaPage } from './pages/CensoVoceriaPage';
+import { MiPerfilPage } from './pages/MiPerfilPage';
 
 function Layout() {
   const { pestanaActiva } = useApp();
@@ -30,6 +31,7 @@ function Layout() {
         {pestanaActiva === 'mi-bloque' && <CensoVoceriaPage />}
         {pestanaActiva === 'solicitudes-censo' && <SolicitudesCensoPage />}
         {pestanaActiva === 'registro-censos' && <RegistroCensosPage />}
+        {pestanaActiva === 'mi-perfil' && <MiPerfilPage />}
         
         {pestanaActiva === 'gestion-personal' && <PersonalPage />}
         {pestanaActiva === 'casos-escalados' && <CasosPage />}

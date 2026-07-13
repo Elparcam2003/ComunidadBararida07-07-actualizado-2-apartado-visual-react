@@ -179,11 +179,19 @@ export function Sidebar() {
           </nav>
         </div>
 
-        {/* === ÁREA FIJA INFERIOR (CERRAR SESIÓN) === */}
-        <div className="p-4 border-t border-slate-800 mt-auto bg-slate-950">
+{/* === ÁREA FIJA INFERIOR (PERFIL Y CERRAR SESIÓN) === */}
+        <div className="p-4 border-t border-slate-800 mt-auto bg-slate-950 space-y-2">
+          <button 
+            onClick={() => cambiarVista('mi-perfil')}
+            className={`w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all border shadow-sm ${pestanaActiva === 'mi-perfil' ? 'bg-indigo-600 text-white border-indigo-500' : 'text-slate-300 hover:bg-slate-900 border-slate-800'}`}
+          >
+            <Users size={18} />
+            Mi Perfil
+          </button>
+          
           <button 
             onClick={logout}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-400 hover:bg-rose-500/10 hover:text-rose-400 transition-all border border-transparent hover:border-rose-500/20 shadow-sm"
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:bg-rose-500/10 hover:text-rose-400 transition-all border border-transparent hover:border-rose-500/20 shadow-sm"
           >
             <LogOut size={18} />
             Cerrar Sesión

@@ -8,6 +8,11 @@ interface AppContextProps {
   login: (usuarioLogin: string, claveLogin: string) => boolean;
   logout: () => void;
   completarConfiguracionInicial: (nuevaClave: string, pregunta: string, respuesta: string) => void;
+  // ✨ NUEVAS FUNCIONES DE RECUPERACIÓN
+  obtenerFichaRecuperacion: (usuarioLogin: string) => { exito: boolean; pregunta?: string; mensaje?: string };
+  recuperarClave: (usuarioLogin: string, respuesta: string, nuevaClave: string) => boolean;
+  actualizarClavePerfil: (nuevaClave: string) => void;
+
   pestanaActiva: string;
   setPestanaActiva: (pestana: string) => void;
   
@@ -116,23 +121,63 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     alert("¡Seguridad configurada con éxito! Bienvenido al sistema.");
   };
 
-  // --- CONTROL DE PERSONAL / USUARIOS ---
+  // ✨ SISTEMA DE RECUPERACIÓN DE CLAVE
+  const obtenerFichaRecuperacion = (usuarioLogin: string) => {
+    const user = usuariosDisponibles.find(u => u.usuarioLogin === usuarioLogin);
+    if (!user) return { exito: false, mensaje: 'El usuario ingresado no existe en nuestros registros.' };
+    
+    // Aquí está la validación brillante que propusiste:
+    if (user.esPrimerIngreso) {
+      return { exito: false, mensaje: 'Aún no has configurado tus preguntas de seguridad. Debes solicitar una clave temporal al Administrador.' };
+    }
+    if (!user.preguntaSeguridad) return { exito: false, mensaje: 'Este usuario no tiene preguntas configuradas.' };
+    
+    return { exito: true, pregunta: user.preguntaSeguridad };
+  };
+
+  const recuperarClave = (usuarioLogin: string, respuesta: string, nuevaClave: string) => {
+    const user = usuariosDisponibles.find(u => u.usuarioLogin === usuarioLogin);
+    if (!user) return false;
+    
+    // Ignoramos mayúsculas, minúsculas y espacios extra para que sea amigable con el usuario
+    const respuestaGuardada = user.respuestaSeguridad?.trim().toLowerCase();
+    const respuestaIngresada = respuesta.trim().toLowerCase();
+    
+    if (respuestaGuardada !== respuestaIngresada) return false;
+
+    // Actualizamos la base de datos simulada con la nueva clave
+    setUsuariosDisponibles(prev => prev.map(u => u.id === user.id ? { ...u, claveLogin: nuevaClave } : u));
+    return true;
+  };
+
+  // ✨ CAMBIAR CLAVE DESDE EL PERFIL
+  const actualizarClavePerfil = (nuevaClave: string) => {
+    if (!usuarioActual) return;
+    const usuarioActualizado = { ...usuarioActual, claveLogin: nuevaClave };
+    setUsuarioActual(usuarioActualizado);
+    setUsuariosDisponibles(prev => prev.map(u => u.id === usuarioActual.id ? usuarioActualizado : u));
+  };
+
+ // --- CONTROL DE PERSONAL / USUARIOS ---
   const agregarUsuarioPersonal = (usuario: Omit<Usuario, 'id'>) => {
     const nuevoId = 'u_' + Math.random().toString(36).substr(2, 9);
     
-    // ✨ REGLA DE ORO: Le asignamos un usuario y clave automáticos al crearlos para que puedan iniciar sesión
-    const usuarioTemporal = usuario.correo ? usuario.correo.split('@')[0] : `user_${nuevoId}`;
+    // ✨ AHORA SÍ: Respetamos el usuario y clave que el Admin escribió en el formulario
+    // Si por algún error vienen vacíos, entonces usamos el correo y '123' como plan B.
+    const usuarioFinal = usuario.usuarioLogin || (usuario.correo ? usuario.correo.split('@')[0] : `user_${nuevoId}`);
+    const claveFinal = usuario.claveLogin || '123';
 
     const nuevoUsuario: Usuario = { 
       ...usuario, 
       id: nuevoId,
-      usuarioLogin: usuarioTemporal, // Su usuario será la primera parte de su correo
-      claveLogin: '123', // Clave temporal obligatoria
-      esPrimerIngreso: true // Obligado a cambiarla
+      usuarioLogin: usuarioFinal, 
+      claveLogin: claveFinal, 
+      esPrimerIngreso: true // Se mantiene la regla de seguridad de cambio obligatorio
     };
 
     setUsuariosDisponibles(prev => [...prev, nuevoUsuario]);
 
+    // Generación automática del censo
     if (usuario.rol === 'JEFE_FAMILIA') {
       const nuevaFam: Familia = {
         id: 'fam_' + Math.random().toString(36).substr(2, 9),
@@ -152,7 +197,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setFamilias(prev => [nuevaFam, ...prev]);
     }
     
-    alert(`Usuario creado. \n\nCredenciales temporales:\nUsuario: ${usuarioTemporal}\nClave: 123`);
+    // ✨ La alerta ahora muestra la clave y usuario reales que escribiste
+    alert(`Usuario creado exitosamente. \n\nCredenciales de Ingreso:\nUsuario: ${usuarioFinal}\nClave: ${claveFinal}`);
   };
 
   const editarUsuarioPersonal = (usuario: Usuario) => {
@@ -224,7 +270,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider
       value={{
         usuariosDisponibles, usuarioActual, login, logout,
-        completarConfiguracionInicial, // Exportada correctamente
+        completarConfiguracionInicial,
+        obtenerFichaRecuperacion, recuperarClave, actualizarClavePerfil, // Exportada correctamente
         pestanaActiva, setPestanaActiva,
         agregarUsuarioPersonal, editarUsuarioPersonal, eliminarUsuarioPersonal,
         familias, familiaActual, agregarFamilia, aprobarFamilia, reenviarSolicitudFamilia, agregarIntegranteFamilia,
