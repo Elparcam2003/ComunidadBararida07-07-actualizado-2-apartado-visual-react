@@ -31,15 +31,27 @@ export interface Usuario {
 
 export interface Pago {
   id: string;
-  familiaId: string; // Apunta a la Familia / Vivienda que paga
-  jefeNombre: string;
-  edificioId: string;
-  apartamento: string;
-  monto: number;
-  fecha: string;
+  concepto: string; // Ej: "Mantenimiento Portón" o "Pintura (Otro)"
+  monto: string;
   referencia: string;
-  metodoPago: 'PAGO_MOVIL' | 'TRANSFERENCIA' | 'EFECTIVO';
-  estado: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'INACTIVO';
+  metodo: string; // Ej: "Pago Móvil", "Transferencia", "Efectivo"
+  fecha: string;
+  estado: 'PENDIENTE' | 'APROBADA' | 'RECHAZADA'; // Usamos APROBADA en femenino por "La transacción" o PENDIENTE
+  
+  // Datos de quién pagó
+  usuarioId: string;
+  usuarioNombre: string;
+  edificioId?: string;
+  apartamento?: string;
+}
+
+export interface Cuota {
+  id: string;
+  concepto: string;
+  monto: string;
+  fechaLimite: string;
+  activa: boolean;
+  edificioId: string; // ✨ NUEVO: 'GLOBAL' o el ID del bloque (Ej: 'B3')
 }
 
 export interface Encuesta {

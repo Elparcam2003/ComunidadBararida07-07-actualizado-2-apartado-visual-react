@@ -1,6 +1,7 @@
 // src/context/AppContext.tsx
 import React, { createContext, useContext, useState } from 'react';
-import type { Usuario, Familia, Pago, Caso, Encuesta, Bitacora, MensajeCaso, IntegranteFamilia, Rol } from '../types';
+import Swal from 'sweetalert2'; // ✨ IMPORTA SWEETALERT AQUÍ
+import type { Usuario, Familia, Pago, Cuota, Caso, Encuesta, Bitacora, MensajeCaso, IntegranteFamilia, Rol } from '../types';
 
 interface AppContextProps {
   usuariosDisponibles: Usuario[];
@@ -30,6 +31,10 @@ interface AppContextProps {
   pagos: Pago[];
   registrarPago: (nuevoPago: Omit<Pago, 'id' | 'estado'>) => void;
   procesarPago: (id: string, estado: Pago['estado']) => void;
+
+  cuotas: Cuota[];
+  publicarCuota: (concepto: string, monto: string, fechaLimite: string, edificioId: string) => void;
+  eliminarCuota: (id: string) => void;
 
   casos: Caso[];
   reportarCaso: (nuevoCaso: Omit<Caso, 'id' | 'fechaReporte' | 'estado' | 'esEscalado' | 'reportadoPorId' | 'reportadoPorNombre'>) => void;
@@ -101,7 +106,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUsuarioActual(null);
   };
 
-  // ✨ AQUÍ ESTÁ LA MAGIA QUE FORZARÁ EL AVANCE
   const completarConfiguracionInicial = (nuevaClave: string, pregunta: string, respuesta: string) => {
     if (!usuarioActual) return;
     
@@ -117,8 +121,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUsuarioActual(usuarioActualizado);
     setUsuariosDisponibles(prev => prev.map(u => u.id === usuarioActual.id ? usuarioActualizado : u));
 
-    // Alerta para asegurarnos de que la función se ejecutó correctamente
-    alert("¡Seguridad configurada con éxito! Bienvenido al sistema.");
+    // ✨ ALERTA MODERNA Y PERSONALIZADA
+    Swal.fire({
+      title: '¡Seguridad Configurada!',
+      text: 'Bienvenid@',
+      icon: 'success',
+      confirmButtonText: 'Entrar al Sistema',
+      confirmButtonColor: '#4f46e5', // Color indigo-600 para que haga juego con tus botones
+      background: '#0f172a', // Fondo dark (slate-900)
+      color: '#f8fafc', // Texto blanco
+      customClass: {
+        popup: 'rounded-3xl border border-slate-800' // Bordes redondeados como tus tarjetas
+      }
+    });
   };
 
   // ✨ SISTEMA DE RECUPERACIÓN DE CLAVE
@@ -198,7 +213,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     
     // ✨ La alerta ahora muestra la clave y usuario reales que escribiste
-    alert(`Usuario creado exitosamente. \n\nCredenciales de Ingreso:\nUsuario: ${usuarioFinal}\nClave: ${claveFinal}`);
+Swal.fire({
+      title: '¡Usuario Creado!',
+      html: `
+        <div class="mt-1 text-sm text-slate-300">
+          <p>El registro se completó exitosamente. Por favor, entrega estas credenciales al residente:</p>
+          
+          <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 mt-4 flex flex-col gap-2 font-mono text-left shadow-inner">
+            <div><span class="text-indigo-400 font-bold uppercase tracking-wider text-[10px]">Usuario:</span> <span class="text-white text-base ml-2">${usuarioFinal}</span></div>
+            <div><span class="text-indigo-400 font-bold uppercase tracking-wider text-[10px]">Clave:</span> <span class="text-white text-base ml-2">${claveFinal}</span></div>
+          </div>
+          
+          <p class="mt-4 text-xs text-rose-400 font-bold flex items-center justify-center gap-1">
+            ⚠️ Anota estos datos antes de cerrar esta ventana.
+          </p>
+        </div>
+      `,
+      icon: 'success',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#4f46e5', // Índigo 600
+      background: '#0f172a', // Slate 900
+      color: '#f8fafc',
+      customClass: {
+        popup: 'rounded-3xl border border-slate-800'
+      }
+    });
   };
 
   const editarUsuarioPersonal = (usuario: Usuario) => {
@@ -233,6 +272,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const procesarPago = (id: string, estado: Pago['estado']) => {
     setPagos(prev => prev.map(p => p.id === id ? { ...p, estado } : p));
+  };
+
+  const [cuotas, setCuotas] = useState<Cuota[]>([
+    { id: 'cuo_1', concepto: 'Aseo Mensual - Julio', monto: '5.00', fechaLimite: '20/07/2026', activa: true, edificioId: 'GLOBAL' },
+    { id: 'cuo_2', concepto: 'Reparación Ascensor', monto: '15.00', fechaLimite: '15/08/2026', activa: true, edificioId: 'B3' }
+  ]);
+
+  const publicarCuota = (concepto: string, monto: string, fechaLimite: string, edificioId: string) => {
+    setCuotas(prev => [{ id: 'cuo_' + Math.random().toString(36).substr(2, 9), concepto, monto, fechaLimite, activa: true, edificioId }, ...prev]);
+  };
+
+  const eliminarCuota = (id: string) => {
+    setCuotas(prev => prev.filter(c => c.id !== id));
   };
 
   const reportarCaso = (nuevoCaso: Omit<Caso, 'id' | 'fechaReporte' | 'estado' | 'esEscalado' | 'reportadoPorId' | 'reportadoPorNombre'>) => {
@@ -275,7 +327,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         pestanaActiva, setPestanaActiva,
         agregarUsuarioPersonal, editarUsuarioPersonal, eliminarUsuarioPersonal,
         familias, familiaActual, agregarFamilia, aprobarFamilia, reenviarSolicitudFamilia, agregarIntegranteFamilia,
-        pagos, registrarPago, procesarPago,
+        pagos, registrarPago, procesarPago, cuotas,publicarCuota, eliminarCuota,
         casos, reportarCaso, enviarMensajeCaso, actualizarEstadoCaso, escalarCasoASuperAdmin: asignarEstatusCasoVoceros,
         encuestas, crearEncuesta, votarEncuesta,
         bitacora, registrarBitacora

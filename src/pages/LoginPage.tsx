@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Lock, User, LogIn, AlertCircle, ArrowLeft, KeyRound, HelpCircle, CheckCircle } from 'lucide-react';
 
+
 export function LoginPage() {
   const { login, obtenerFichaRecuperacion, recuperarClave } = useApp();
   
@@ -87,11 +88,18 @@ export function LoginPage() {
         {modo === 'LOGIN' && (
           <div className="animate-fadeIn">
             <div className="text-center mb-8">
-              <div className="bg-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-600/20 rotate-3">
-                <Lock className="text-white" size={32} />
+              
+              {/* ✨ Logo centrado con mx-auto y margen inferior con mb-4 */}
+              <div className="w-24 h-24 mx-auto mb-4 rounded-2xl overflow-hidden shadow-lg shadow-indigo-500/10 border border-slate-800">
+                <img
+                  src="/LogoInicio.jpg"
+                  alt="Logo Comunidad Bararida"
+                  className="w-full h-full object-cover"
+                />
               </div>
+              
               <h1 className="text-2xl font-black text-white tracking-tight">Comunidad Bararida</h1>
-              <p className="text-slate-400 text-sm mt-1 font-medium">Acceso al Ecosistema Inteligente</p>
+              <p className="text-slate-400 text-sm mt-1 font-medium">Introduzca sus datos</p>
             </div>
 
             <form onSubmit={manejarLogin} className="space-y-5">
